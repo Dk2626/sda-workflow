@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>End User Manual — SDA Workflow</title>
+<style>
+  :root { --primary: #0a2540; --accent: #635bff; --muted: #64748b; --bg: #f7f8fc; --card: #ffffff; --border: #e3e8f0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #1a202c; line-height: 1.65; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside { background: var(--primary); color: #fff; padding: 24px 20px; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+  aside h1 { font-size: 16px; margin-bottom: 8px; }
+  aside .ver { font-size: 12px; opacity: 0.7; margin-bottom: 24px; }
+  aside nav a { display: block; color: rgba(255,255,255,0.85); text-decoration: none; padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 2px; }
+  aside nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  aside nav .group { font-size: 11px; text-transform: uppercase; opacity: 0.5; margin: 16px 12px 4px; letter-spacing: 0.05em; }
+  main { padding: 40px 60px; max-width: 1100px; }
+  h1.page { font-size: 32px; color: var(--primary); margin-bottom: 8px; }
+  section { background: var(--card); padding: 28px 32px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
+  section h2 { color: var(--primary); font-size: 24px; margin-bottom: 12px; border-left: 4px solid var(--accent); padding-left: 12px; }
+  section h3 { font-size: 18px; margin: 18px 0 8px; color: var(--primary); }
+  section p { margin-bottom: 10px; }
+  ol, ul { margin-left: 22px; margin-bottom: 12px; }
+  ol li, ul li { margin-bottom: 5px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; }
+  code { font-family: "SF Mono", Consolas, monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .callout { padding: 14px 18px; border-radius: 8px; margin: 12px 0; border-left: 4px solid; }
+  .tip   { background: #ecfeff; border-color: #0891b2; }
+  .warn  { background: #fffbeb; border-color: #d97706; }
+  .danger{ background: #fef2f2; border-color: #dc2626; }
+  .ok    { background: #ecfdf5; border-color: #059669; }
+  .screen { background: #0a2540; color: #d1d5db; padding: 12px 16px; border-radius: 8px; font-family: "SF Mono", monospace; font-size: 12px; line-height: 1.6; margin: 12px 0; }
+  .screen .row { display: flex; gap: 8px; }
+  .screen .label { color: #9ca3af; min-width: 80px; }
+  .role { display: inline-block; padding: 1px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; background: #ede9fe; color: var(--accent); }
+  .btn-sample { display: inline-block; padding: 4px 12px; border-radius: 6px; font-size: 12px; font-weight: 500; background: var(--accent); color: #fff; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+  .step { display: grid; grid-template-columns: 32px 1fr; gap: 12px; margin-bottom: 12px; }
+  .step .num { background: var(--accent); color: #fff; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 14px; }
+  @media print { aside { display: none; } .layout { grid-template-columns: 1fr; } section { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <h1>End User Manual</h1>
+    <div class="ver">SDA Workflow · v1.0</div>
+    <nav>
+      <div class="group">Start Here</div>
+      <a href="#intro">1. Introduction</a>
+      <a href="#login">2. Logging In</a>
+      <a href="#nav">3. Navigation</a>
+      <div class="group">By Role</div>
+      <a href="#requestor">4. Requestor Guide</a>
+      <a href="#approver">5. Approver Guide</a>
+      <a href="#compliance">6. Compliance Officer Guide</a>
+      <a href="#auditor">7. Auditor Guide</a>
+      <a href="#admin">8. Administrator Guide</a>
+      <div class="group">Reference</div>
+      <a href="#ai">9. Using AI Features</a>
+      <a href="#states">10. Workflow States</a>
+      <a href="#faq">11. FAQ</a>
+      <a href="#troubleshoot">12. Troubleshooting</a>
+    </nav>
+  </aside>
+
+  <main>
+    <h1 class="page">End User Manual</h1>
+    <p style="color: var(--muted); margin-bottom: 28px;">AI-Assisted Service Deviation & Approval Workflow — User Guide for Telecom & Media Operators</p>
+
+    <section id="intro">
+      <h2>1. Introduction</h2>
+      <p>The <strong>SDA Workflow</strong> platform helps Telecom and Media operators raise, route, review, and approve operational deviation requests — such as billing credits beyond standard limits, temporary bandwidth boosts, SLA waivers, content access exceptions, and KYC deferrals — while preserving regulatory auditability.</p>
+      <p>The system is enhanced with four AI agents that assist (but never replace) human decision-makers:</p>
+      <ul>
+        <li><strong>Justification Agent</strong> — drafts compliance-friendly business justifications.</li>
+        <li><strong>Risk Scoring Agent</strong> — assigns LOW / MEDIUM / HIGH risk with weighted factors.</li>
+        <li><strong>Context Summary Agent</strong> — produces a one-paragraph customer brief for approvers.</li>
+        <li><strong>Policy Agent</strong> — surfaces relevant internal policies and contract clauses.</li>
+      </ul>
+      <div class="callout tip"><strong>Tip:</strong> Every AI output is advisory. You can edit, override, or ignore any AI suggestion. All AI invocations are logged for audit.</div>
+    </section>
+
+    <section id="login">
+      <h2>2. Logging In</h2>
+      <div class="step"><div class="num">1</div><div>Open <code>http://localhost:3000/login</code> in your browser.</div></div>
+      <div class="step"><div class="num">2</div><div>Enter your username (e.g., <code>alice</code>) and password (default for demo: <code>demo123</code>).</div></div>
+      <div class="step"><div class="num">3</div><div>Click <span class="btn-sample">Sign In</span>. You will be redirected to the Dashboard.</div></div>
+
+      <h3>Login Screen Layout</h3>
+      <div class="screen">
+<pre>┌─────────────────────────────────────┐
+│   SDA Workflow                      │
+│   AI-Assisted Service Deviation     │
+│                                     │
+│   Username:  [ alice           ]    │
+│   Password:  [ ********        ]    │
+│                                     │
+│            [ Sign In ]              │
+│                                     │
+│   Demo accounts (all password "demo123"):│
+│   alice — Requestor                 │
+│   bob — L1 Approver                 │
+│   finn — Finance                    │
+│   nina — Network                    │
+│   carol — Compliance                │
+│   aud — Auditor                     │
+│   admin — Admin                     │
+└─────────────────────────────────────┘</pre>
+      </div>
+    </section>
+
+    <section id="nav">
+      <h2>3. Navigation</h2>
+      <p>After login, the top navigation bar shows the available pages based on your role:</p>
+      <table>
+        <thead><tr><th>Link</th><th>Visible to</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td>All</td><td>Aggregate metrics, recent activity.</td></tr>
+          <tr><td>Deviations</td><td>All</td><td>List of deviation requests (filtered by role).</td></tr>
+          <tr><td>New Deviation</td><td>Requestor, Admin</td><td>Create a new request.</td></tr>
+          <tr><td>Audit</td><td>Auditor, Admin, Compliance</td><td>Full audit trail viewer.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="requestor">
+      <h2>4. Requestor Guide <span class="role">REQUESTOR</span></h2>
+      <p>As an Account/Operations/Network Manager, you raise deviation requests on behalf of customers.</p>
+
+      <h3>4.1 Create a New Deviation</h3>
+      <div class="step"><div class="num">1</div><div>Click <span class="btn-sample">+ New Deviation</span> in the top bar.</div></div>
+      <div class="step"><div class="num">2</div><div>Select the <strong>Deviation Type</strong> (e.g., Billing Credit Beyond Limit).</div></div>
+      <div class="step"><div class="num">3</div><div>Pick the <strong>Customer</strong>. The system auto-loads the customer's services. Optionally select a specific service.</div></div>
+      <div class="step"><div class="num">4</div><div>Describe the <strong>Requested Action</strong> in 1–2 sentences (e.g., "Credit $4,500 to account for the November outage compensation").</div></div>
+      <div class="step"><div class="num">5</div><div>Enter <strong>Amount</strong> (for billing credits) or <strong>Duration</strong> (for time-bound exceptions).</div></div>
+      <div class="step"><div class="num">6</div><div>Click <span class="btn-sample">✨ Generate with AI</span> to get an AI-drafted justification. Review and edit the text — it's your final justification, not the AI's.</div></div>
+      <div class="step"><div class="num">7</div><div>Click <span class="btn-sample">Save & Submit for Approval</span>. The system runs AI risk scoring and routes the request to the appropriate approver.</div></div>
+
+      <div class="callout tip"><strong>Tip:</strong> You can also click <em>Save Draft</em> to keep editing later. Drafts are only visible to you.</div>
+
+      <h3>4.2 Track Your Requests</h3>
+      <p>Open <strong>Deviations</strong> in the top bar. You will see only requests you created. The <em>State</em> column shows where the request is in the approval chain.</p>
+
+      <h3>4.3 Provide More Information</h3>
+      <p>If an approver needs clarification, the request state will become <code>INFO_REQUESTED</code>. Open the request, read the approver's comment, and add your reply via the comment area on the detail page.</p>
+
+      <h3>4.4 Execute an Approved Request</h3>
+      <p>Once all required approvals are received, the state becomes <code>FINAL_APPROVED</code>. Open the request and click <span class="btn-sample">Mark Executed</span> after completing the downstream action (e.g., applying the billing credit in the billing system).</p>
+    </section>
+
+    <section id="approver">
+      <h2>5. Approver Guide <span class="role">L1 / Finance / Network</span></h2>
+      <p>You review and approve requests routed to your role.</p>
+
+      <h3>5.1 Find Pending Requests</h3>
+      <p>Open <strong>Deviations</strong>. Use the <em>State</em> filter to show only <code>UNDER_REVIEW</code> items. The <em>Awaiting</em> column tells you which role is responsible — your role should match for items you must act on.</p>
+
+      <h3>5.2 Approver Workbench (Request Detail Page)</h3>
+      <p>Opening a request shows a comprehensive view:</p>
+      <ul>
+        <li><strong>Risk badge</strong> — AI-assigned LOW / MEDIUM / HIGH.</li>
+        <li><strong>AI Context Summary</strong> (auto-loaded) — one paragraph snapshot of customer & service.</li>
+        <li><strong>Relevant Policies</strong> — click "Load" to fetch AI-cited policies.</li>
+        <li><strong>AI Risk Assessment</strong> — full list of contributing factors and weights.</li>
+        <li><strong>Action History</strong> — every prior approval action with comments.</li>
+      </ul>
+
+      <h3>5.3 Take Action</h3>
+      <p>In the right-hand panel:</p>
+      <ol>
+        <li>Type a <strong>mandatory comment</strong> (minimum 5 characters).</li>
+        <li>Choose your action:
+          <ul>
+            <li><span class="btn-sample" style="background:#059669">Approve</span> — moves to the next approver or to <code>FINAL_APPROVED</code>.</li>
+            <li><span class="btn-sample" style="background:#64748b">Request Info</span> — sends it back to the requestor.</li>
+            <li><span class="btn-sample" style="background:#dc2626">Reject</span> — terminates the request.</li>
+          </ul>
+        </li>
+      </ol>
+
+      <h3>5.4 Override the AI Risk Score</h3>
+      <p>If you disagree with the AI risk band:</p>
+      <div class="step"><div class="num">1</div><div>Click <em>Override AI risk score</em>.</div></div>
+      <div class="step"><div class="num">2</div><div>Pick the new band (LOW / MEDIUM / HIGH).</div></div>
+      <div class="step"><div class="num">3</div><div>Write a reason of at least <strong>20 characters</strong>. Mandatory by policy.</div></div>
+      <div class="step"><div class="num">4</div><div>Click <span class="btn-sample">Save Override</span>. The action is recorded with your reason.</div></div>
+      <div class="callout warn"><strong>Note:</strong> Downgrading a HIGH risk to LOW or MEDIUM notifies the Compliance team and is highlighted in the audit log.</div>
+    </section>
+
+    <section id="compliance">
+      <h2>6. Compliance Officer Guide <span class="role">COMPLIANCE_APPROVER</span></h2>
+      <p>You hold final-tier approval for regulatory-sensitive requests and may <strong>veto</strong> any high-risk or KYC/Content deviation.</p>
+
+      <h3>6.1 Compliance Mandatory Cases</h3>
+      <table>
+        <thead><tr><th>Deviation Type</th><th>Compliance Required?</th></tr></thead>
+        <tbody>
+          <tr><td>DT_KYC_DF (KYC Deferral)</td><td>Always</td></tr>
+          <tr><td>DT_CONTENT (Content Access)</td><td>Always</td></tr>
+          <tr><td>DT_SLA_WV (SLA Waiver)</td><td>Always</td></tr>
+          <tr><td>DT_BILL_CR (Billing Credit)</td><td>Only when amount &gt; USD 5,000</td></tr>
+          <tr><td>DT_DATA_BW (Bandwidth Boost)</td><td>Only when AI flags HIGH risk</td></tr>
+        </tbody>
+      </table>
+
+      <h3>6.2 Veto Authority</h3>
+      <p>You may reject a request at any point <strong>after submission</strong>, even if L1 and L2 have already approved. Use the <span class="btn-sample" style="background:#dc2626">Veto / Reject</span> button on the detail page. The action is recorded as <code>COMPLIANCE_VETO</code> in the audit log.</p>
+
+      <div class="callout danger"><strong>Important:</strong> A veto is final. The state transitions to <code>REJECTED</code> regardless of prior approvals. Use this power judiciously and ensure your comment captures the regulatory or contractual basis.</div>
+    </section>
+
+    <section id="auditor">
+      <h2>7. Auditor Guide <span class="role">AUDITOR</span></h2>
+      <p>You have read-only access to every request and its complete history.</p>
+
+      <h3>7.1 Open the Audit Page</h3>
+      <p>Click <strong>Audit</strong> in the top bar. Enter the deviation ID (visible in the URL of the detail page, e.g., <code>/deviations/<strong>3</strong></code> → ID is <code>3</code>) and click <span class="btn-sample">Load</span>.</p>
+
+      <h3>7.2 What You See</h3>
+      <ul>
+        <li><strong>Audit Events</strong> — chronological list of every state change, login, AI call, and override, with actor and timestamp.</li>
+        <li><strong>AI Invocations</strong> — every call to an AI agent, with the prompt (truncated), response, model, tokens, duration, and confidence score.</li>
+      </ul>
+
+      <h3>7.3 Export</h3>
+      <p>For audit-ready CSV exports of all deviations, click <strong>Download CSV</strong> from the Dashboard.</p>
+    </section>
+
+    <section id="admin">
+      <h2>8. Administrator Guide <span class="role">ADMIN</span></h2>
+      <p>Administrators have full access plus the ability to create deviations on behalf of any role for testing or recovery scenarios.</p>
+      <h3>8.1 User Management</h3>
+      <p>For this release, users are seeded via the <code>scripts/seed.js</code> script. Future versions will include an Admin UI for user provisioning.</p>
+      <h3>8.2 Database Operations</h3>
+      <ul>
+        <li><code>npm run init-db</code> — initialize empty schema.</li>
+        <li><code>npm run seed</code> — load demo users, customers, services, policies.</li>
+        <li>SQLite file is <code>./sda.db</code> in the app root — back up regularly in production.</li>
+      </ul>
+    </section>
+
+    <section id="ai">
+      <h2>9. Using AI Features Effectively</h2>
+      <h3>9.1 Justification Generation</h3>
+      <ol>
+        <li>Fill in customer, service, action, and amount/duration <em>before</em> clicking the AI button — more context, better output.</li>
+        <li>Review the generated text. Look for:
+          <ul>
+            <li>Factual accuracy (does it match what you actually requested?).</li>
+            <li>Tone (it should be neutral and professional, not promotional).</li>
+            <li>Policy alignment (does it reference any policies that don't apply?).</li>
+          </ul>
+        </li>
+        <li>Edit or rewrite as needed. The published justification is yours, not the AI's.</li>
+      </ol>
+
+      <h3>9.2 Reading the Risk Score</h3>
+      <p>The risk score includes:</p>
+      <ul>
+        <li><strong>Band</strong> — LOW (green), MEDIUM (amber), HIGH (red).</li>
+        <li><strong>Factors</strong> — each factor's weight (0–1) and a short value/reason.</li>
+        <li><strong>Confidence</strong> — surfaced in the audit log. Confidence below 0.7 deserves extra scrutiny.</li>
+      </ul>
+
+      <h3>9.3 PII & Privacy</h3>
+      <p>Before sending data to the AI provider, the system replaces customer names and codes with tokens such as <code>[CUSTOMER]</code>. You will see this in audit prompts. This protects PII while preserving structural context for the model.</p>
+    </section>
+
+    <section id="states">
+      <h2>10. Workflow States Reference</h2>
+      <table>
+        <thead><tr><th>State</th><th>Meaning</th><th>Who Acts Next</th></tr></thead>
+        <tbody>
+          <tr><td><code>DRAFT</code></td><td>Being edited by the requestor.</td><td>Requestor (submit/withdraw).</td></tr>
+          <tr><td><code>UNDER_REVIEW</code></td><td>With an approver for action.</td><td>The role shown in "Awaiting".</td></tr>
+          <tr><td><code>INFO_REQUESTED</code></td><td>Approver waiting on more info.</td><td>Requestor (provide info).</td></tr>
+          <tr><td><code>APPROVED_L1</code> / <code>APPROVED_L2</code></td><td>Cleared an intermediate tier.</td><td>Next approver in chain.</td></tr>
+          <tr><td><code>FINAL_APPROVED</code></td><td>All approvals received.</td><td>Requestor (execute) or system (expire).</td></tr>
+          <tr><td><code>EXECUTED</code></td><td>Downstream action completed.</td><td>(terminal)</td></tr>
+          <tr><td><code>REJECTED</code></td><td>Rejected or vetoed.</td><td>(terminal)</td></tr>
+          <tr><td><code>EXPIRED</code></td><td>Not executed within window.</td><td>(terminal)</td></tr>
+          <tr><td><code>WITHDRAWN</code></td><td>Requestor withdrew before approval.</td><td>(terminal)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="faq">
+      <h2>11. Frequently Asked Questions</h2>
+      <h3>Q: Why can't I see another user's draft request?</h3>
+      <p>By design, requestors see only their own requests. Approvers, auditors, and admins see all.</p>
+
+      <h3>Q: Can I delete a request?</h3>
+      <p>No. Audit retention rules forbid hard-deletion. Use <em>Withdraw</em> (before approval) or <em>Reject</em> (after submission).</p>
+
+      <h3>Q: The AI says my deviation is "MEDIUM" but I think it's "HIGH". What do I do?</h3>
+      <p>Use the <em>Override AI risk score</em> action with a written reason. Both the original AI score and your override are kept in the audit log.</p>
+
+      <h3>Q: What happens if the AI service is down?</h3>
+      <p>The system uses a synthetic fallback so the workflow continues. The audit log will show model name <code>fallback-mock</code>, and approvers will see lower confidence indicators.</p>
+
+      <h3>Q: How long is data kept?</h3>
+      <p>Audit log entries are retained for <strong>at least 7 years</strong> by policy (NFR-004). Deviation records and AI invocations are kept indefinitely.</p>
+
+      <h3>Q: Can I approve my own request?</h3>
+      <p>No — segregation of duties is enforced. The system blocks any approve/reject by the original requestor.</p>
+    </section>
+
+    <section id="troubleshoot">
+      <h2>12. Troubleshooting</h2>
+      <table>
+        <thead><tr><th>Symptom</th><th>Likely Cause</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td>"Invalid credentials" on login</td><td>Password mismatch or inactive user</td><td>Verify password. Contact admin if account is locked.</td></tr>
+          <tr><td>"Justification must be 50–4000 characters"</td><td>Justification too short or too long</td><td>Use the AI helper or expand the text.</td></tr>
+          <tr><td>"You cannot approve your own request"</td><td>Trying to approve a deviation you created</td><td>Have a colleague with the same role approve it.</td></tr>
+          <tr><td>"This request is awaiting FINANCE_APPROVER, not L1_APPROVER"</td><td>Wrong-role action attempt</td><td>Wait for the workflow to route to your role.</td></tr>
+          <tr><td>AI Justification button is disabled</td><td>Customer not selected</td><td>Pick a customer first; AI context needs it.</td></tr>
+          <tr><td>"Reason must be at least 20 characters"</td><td>Risk override reason too short</td><td>Expand the reason to explain your override.</td></tr>
+        </tbody>
+      </table>
+
+      <h3>Need more help?</h3>
+      <p>Contact your System Administrator or open a ticket via the internal helpdesk, referencing the deviation ID.</p>
+    </section>
+
+    <p style="text-align:center; color: var(--muted); padding: 20px;">— End of User Manual —</p>
+  </main>
+</div>
+</body>
+</html>

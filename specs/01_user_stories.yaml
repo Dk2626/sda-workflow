@@ -1,0 +1,125 @@
+# =============================================================================
+#  SPEC-DSL: Per-User-Story Definitions (US-01 to US-12)
+#  Each story is independently convertible to code + tests.
+# =============================================================================
+
+stories:
+
+  - id: US-01
+    title: Raise a billing-credit deviation
+    persona: Account Manager (REQUESTOR)
+    goal: Create a deviation request with type, customer, action, amount, and attachments.
+    acceptance_criteria:
+      - GIVEN authenticated REQUESTOR, WHEN they POST /api/deviations with valid payload, THEN response is 201 with reference SDA-YYYY-NNNNN and state=DRAFT.
+      - Mandatory fields validated; missing field returns 400 with field-level errors.
+      - Created record visible only to the requestor and admins until submitted.
+    maps_to_requirements: [FR-001, FR-005, FR-018]
+
+  - id: US-02
+    title: Auto-draft justification
+    persona: Account Manager (REQUESTOR)
+    goal: Have the AI propose a compliance-friendly justification.
+    acceptance_criteria:
+      - On clicking "Generate Justification", system calls justification_agent with deviation context.
+      - Response text appears in the form within 8 seconds.
+      - Original prompt, model, and response stored in ai_invocation table.
+      - Requestor can edit or replace AI text before submitting.
+    maps_to_requirements: [FR-002, FR-015]
+
+  - id: US-03
+    title: AI customer context for approver
+    persona: L1 Approver
+    goal: Get a one-paragraph snapshot of customer + service when opening a request.
+    acceptance_criteria:
+      - On opening a SUBMITTED request, system invokes context_summary_agent if not previously cached for this request.
+      - Summary contains tier, monthly revenue, service profile, recent deviation count.
+      - PII (customer name) is tokenised before being sent to LLM.
+    maps_to_requirements: [FR-002, FR-015, US-09]
+
+  - id: US-04
+    title: Risk score visible upfront
+    persona: Finance Approver
+    goal: See financial impact and AI risk score on the approval screen.
+    acceptance_criteria:
+      - Risk badge (LOW/MED/HIGH) and factors list shown at top of detail screen.
+      - Total amount and currency clearly visible.
+      - Risk score with confidence > 0.7 highlighted; < 0.7 shows "needs review" note.
+    maps_to_requirements: [FR-003, FR-015]
+
+  - id: US-05
+    title: Bandwidth/SLA data attached
+    persona: Network Approver
+    goal: See current service config (bandwidth, SLA) inline.
+    acceptance_criteria:
+      - Service data block visible on detail page without separate navigation.
+      - Block shows: current bandwidth, requested bandwidth, SLA tier, contract end.
+    maps_to_requirements: [FR-001, FR-010]
+
+  - id: US-06
+    title: Compliance veto
+    persona: Compliance Officer
+    goal: Reject a deviation even after L1/L2 approval.
+    acceptance_criteria:
+      - Compliance role can act on any deviation flagged HIGH risk, or type DT_KYC_DF / DT_CONTENT.
+      - Reject from compliance is FINAL; state transitions to REJECTED regardless of prior approvals.
+      - Veto creates an audit row with COMPLIANCE_VETO event_type.
+    maps_to_requirements: [FR-006, FR-009]
+
+  - id: US-07
+    title: AI-suggested policy citations
+    persona: Compliance Officer
+    goal: View relevant internal policies and contract clauses.
+    acceptance_criteria:
+      - On detail page, "Policy Suggestions" panel calls policy_agent.
+      - Each citation shows policy code, title, snippet, and relevance score.
+      - Citations link to the full policy text.
+    maps_to_requirements: [FR-011, FR-015]
+
+  - id: US-08
+    title: Override AI risk
+    persona: Any Approver
+    goal: Manually change the risk band with a written reason.
+    acceptance_criteria:
+      - Override modal forces a non-empty reason (>= 20 chars).
+      - Override action stored in approval_action with risk_override_reason.
+      - Downgrade of severity sends notification to Compliance.
+    maps_to_requirements: [FR-013]
+
+  - id: US-09
+    title: Immutable audit trail
+    persona: Auditor
+    goal: Read full history of any deviation including AI prompts.
+    acceptance_criteria:
+      - /audit/:id returns chronological list of audit_log entries and ai_invocations.
+      - No edit/delete endpoints exist for audit data.
+      - Export to CSV available.
+    maps_to_requirements: [FR-008, FR-014]
+
+  - id: US-10
+    title: Admin configuration
+    persona: System Administrator
+    goal: Configure thresholds, approval chains, SLAs.
+    acceptance_criteria:
+      - Admin can view/edit financial threshold per deviation type.
+      - Admin can edit SLA hours per step.
+      - Changes recorded in audit log with previous and new value.
+    maps_to_requirements: [FR-007]
+
+  - id: US-11
+    title: Notifications on state changes
+    persona: Requestor
+    goal: Receive alerts when their request moves.
+    acceptance_criteria:
+      - In-app notification badge increments on relevant events.
+      - Email stub written to a local log (notifications.log) in dev.
+    maps_to_requirements: [FR-012]
+
+  - id: US-12
+    title: Dashboard of pending and overdue items
+    persona: Manager
+    goal: See aggregate metrics with overdue highlighted.
+    acceptance_criteria:
+      - Dashboard tiles: total pending, overdue (> SLA), by risk, by type.
+      - Filter by date range.
+      - SLA breach % visible.
+    maps_to_requirements: [FR-010]

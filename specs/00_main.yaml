@@ -1,0 +1,290 @@
+# =============================================================================
+#  SPEC-DSL: AI-Assisted Service Deviation & Approval Workflow
+#  Purpose : Single source of truth — converted into code, DB schema, tests.
+#  Version : 1.0
+# =============================================================================
+
+application:
+  name: sda-workflow
+  description: AI-Assisted Service Deviation & Approval Workflow for Telecom/Media
+  owner: TCS BFSI-Telecom Practice
+  tech_stack:
+    runtime: Node.js 20 + Next.js 14 (App Router)
+    database: SQLite (dev) / PostgreSQL (prod)
+    orm: better-sqlite3
+    ui: React 18 + Tailwind CSS
+    ai_provider: OpenAI (gpt-4o-mini)
+    auth: NextAuth (credentials, dev) / OIDC (prod)
+
+# -----------------------------------------------------------------------------
+#  DOMAIN MODEL
+# -----------------------------------------------------------------------------
+entities:
+  - name: User
+    fields:
+      id: { type: integer, pk: true }
+      username: { type: string, unique: true, required: true }
+      full_name: { type: string, required: true }
+      email: { type: string, required: true }
+      role: { type: enum, values: [REQUESTOR, L1_APPROVER, FINANCE_APPROVER, NETWORK_APPROVER, COMPLIANCE_APPROVER, AUDITOR, ADMIN] }
+      active: { type: boolean, default: true }
+      password_hash: { type: string, required: true }
+
+  - name: Customer
+    fields:
+      id: { type: integer, pk: true }
+      customer_code: { type: string, unique: true }
+      name: { type: string }
+      tier: { type: enum, values: [BRONZE, SILVER, GOLD, PLATINUM] }
+      monthly_revenue: { type: decimal }
+      kyc_status: { type: enum, values: [VERIFIED, PENDING, DEFERRED, EXPIRED] }
+
+  - name: Service
+    fields:
+      id: { type: integer, pk: true }
+      customer_id: { type: fk -> Customer }
+      service_type: { type: enum, values: [MOBILE, BROADBAND, ENTERPRISE, MEDIA_STREAMING] }
+      bandwidth_mbps: { type: integer }
+      sla_tier: { type: string }
+
+  - name: DeviationRequest
+    fields:
+      id: { type: integer, pk: true }
+      reference: { type: string, unique: true, format: "SDA-YYYY-NNNNN" }
+      deviation_type: { type: enum, values: [DT_BILL_CR, DT_DATA_BW, DT_SLA_WV, DT_CONTENT, DT_KYC_DF] }
+      customer_id: { type: fk -> Customer }
+      service_id: { type: fk -> Service }
+      requestor_id: { type: fk -> User }
+      requested_action: { type: text }
+      amount: { type: decimal, nullable: true }
+      currency: { type: string, default: USD }
+      duration_days: { type: integer, nullable: true }
+      justification: { type: text }
+      ai_justification: { type: text, nullable: true }
+      ai_risk_score: { type: enum, values: [LOW, MEDIUM, HIGH], nullable: true }
+      ai_risk_factors: { type: json, nullable: true }
+      ai_context_summary: { type: text, nullable: true }
+      ai_policy_citations: { type: json, nullable: true }
+      state: { type: enum, values: [DRAFT, SUBMITTED, UNDER_REVIEW, INFO_REQUESTED, APPROVED_L1, APPROVED_L2, FINAL_APPROVED, EXECUTED, REJECTED, EXPIRED, WITHDRAWN] }
+      current_approver_role: { type: string, nullable: true }
+      sla_deadline: { type: datetime, nullable: true }
+      created_at: { type: datetime, default: now }
+      updated_at: { type: datetime, default: now }
+
+  - name: ApprovalAction
+    fields:
+      id: { type: integer, pk: true }
+      deviation_id: { type: fk -> DeviationRequest }
+      actor_id: { type: fk -> User }
+      action: { type: enum, values: [SUBMIT, APPROVE, REJECT, REQUEST_INFO, OVERRIDE_RISK, WITHDRAW, ESCALATE, EXECUTE] }
+      from_state: { type: string }
+      to_state: { type: string }
+      comments: { type: text }
+      risk_override_reason: { type: text, nullable: true }
+      created_at: { type: datetime, default: now }
+
+  - name: AuditLog
+    fields:
+      id: { type: integer, pk: true }
+      deviation_id: { type: fk -> DeviationRequest, nullable: true }
+      actor_id: { type: fk -> User, nullable: true }
+      event_type: { type: string }
+      event_data: { type: json }
+      ip_address: { type: string, nullable: true }
+      created_at: { type: datetime, default: now }
+
+  - name: AiInvocation
+    fields:
+      id: { type: integer, pk: true }
+      deviation_id: { type: fk -> DeviationRequest }
+      agent_type: { type: enum, values: [JUSTIFICATION, RISK_SCORING, CONTEXT_SUMMARY, POLICY_INTERPRETATION] }
+      model: { type: string }
+      prompt: { type: text }
+      response: { type: text }
+      confidence: { type: decimal, nullable: true }
+      tokens_used: { type: integer, nullable: true }
+      duration_ms: { type: integer }
+      created_at: { type: datetime, default: now }
+
+  - name: Policy
+    fields:
+      id: { type: integer, pk: true }
+      code: { type: string, unique: true }
+      title: { type: string }
+      content: { type: text }
+      applies_to_types: { type: json }   # list of deviation types
+
+# -----------------------------------------------------------------------------
+#  WORKFLOW (STATE MACHINE)
+# -----------------------------------------------------------------------------
+state_machine:
+  initial: DRAFT
+  states:
+    DRAFT:
+      transitions:
+        - { event: SUBMIT,   to: SUBMITTED,    guard: validate_required_fields }
+        - { event: WITHDRAW, to: WITHDRAWN }
+    SUBMITTED:
+      on_enter: [run_ai_risk_scoring, set_sla_deadline, notify_l1_approver]
+      transitions:
+        - { event: START_REVIEW, to: UNDER_REVIEW,  role: L1_APPROVER }
+        - { event: ESCALATE,     to: ESCALATED,    guard: sla_breached }
+    UNDER_REVIEW:
+      transitions:
+        - { event: APPROVE,         to: "decide_next_state_after_l1", role: any_approver }
+        - { event: REJECT,          to: REJECTED }
+        - { event: REQUEST_INFO,    to: INFO_REQUESTED }
+        - { event: OVERRIDE_RISK,   to: UNDER_REVIEW, requires_reason: true }
+    INFO_REQUESTED:
+      transitions:
+        - { event: PROVIDE_INFO, to: UNDER_REVIEW, role: REQUESTOR }
+    APPROVED_L1:
+      transitions:
+        - { event: APPROVE, to: APPROVED_L2, role: [FINANCE_APPROVER, NETWORK_APPROVER] }
+        - { event: REJECT,  to: REJECTED }
+    APPROVED_L2:
+      transitions:
+        - { event: APPROVE, to: FINAL_APPROVED, role: COMPLIANCE_APPROVER, conditional: compliance_required }
+        - { event: REJECT,  to: REJECTED }
+    FINAL_APPROVED:
+      on_enter: [notify_requestor_approved, schedule_expiry]
+      transitions:
+        - { event: EXECUTE, to: EXECUTED }
+        - { event: EXPIRE,  to: EXPIRED, guard: expiry_passed }
+
+# -----------------------------------------------------------------------------
+#  APPROVAL CHAINS  (per deviation type)
+# -----------------------------------------------------------------------------
+approval_chains:
+  DT_BILL_CR:
+    base: [L1_APPROVER, FINANCE_APPROVER]
+    conditional: { if_amount_gt: 5000, append: [COMPLIANCE_APPROVER] }
+  DT_DATA_BW:
+    base: [L1_APPROVER, NETWORK_APPROVER]
+  DT_SLA_WV:
+    base: [L1_APPROVER, NETWORK_APPROVER, COMPLIANCE_APPROVER]
+  DT_CONTENT:
+    base: [L1_APPROVER, COMPLIANCE_APPROVER]
+  DT_KYC_DF:
+    base: [L1_APPROVER, COMPLIANCE_APPROVER]   # compliance is MANDATORY
+
+# -----------------------------------------------------------------------------
+#  AI AGENTS
+# -----------------------------------------------------------------------------
+ai_agents:
+  - name: justification_agent
+    model: gpt-4o-mini
+    temperature: 0.4
+    purpose: Draft compliance-friendly business justification.
+    inputs: [deviation_type, customer_summary, requested_action, amount, duration]
+    output_format: plain_text
+    max_tokens: 400
+
+  - name: risk_scoring_agent
+    model: gpt-4o-mini
+    temperature: 0.2
+    purpose: Compute risk score (LOW|MEDIUM|HIGH) with contributing factors.
+    inputs: [deviation_type, amount, customer_tier, kyc_status, historical_count]
+    output_format: json
+    output_schema:
+      score: "LOW | MEDIUM | HIGH"
+      factors: "list of {factor, weight, value}"
+      confidence: "0.0 - 1.0"
+
+  - name: context_summary_agent
+    model: gpt-4o-mini
+    temperature: 0.3
+    purpose: Single-paragraph snapshot of the customer + service for approvers.
+    inputs: [customer, service, recent_deviation_history]
+    output_format: plain_text
+    max_tokens: 220
+
+  - name: policy_agent
+    model: gpt-4o-mini
+    temperature: 0.1
+    purpose: Cite internal policies relevant to the deviation.
+    inputs: [deviation_type, requested_action, available_policies]
+    output_format: json
+    output_schema:
+      citations: "list of {policy_code, title, snippet, relevance}"
+
+# -----------------------------------------------------------------------------
+#  REST API ENDPOINTS
+# -----------------------------------------------------------------------------
+api:
+  base_path: /api
+  endpoints:
+    - { method: POST,  path: /auth/login,                     description: Login with credentials }
+    - { method: POST,  path: /auth/logout,                    description: Logout }
+    - { method: GET,   path: /me,                             description: Get current user }
+    - { method: GET,   path: /customers,                      description: List customers }
+    - { method: GET,   path: /customers/:id,                  description: Get customer + services }
+    - { method: GET,   path: /deviations,                     description: List deviations (filters by role) }
+    - { method: POST,  path: /deviations,                     description: Create draft deviation }
+    - { method: GET,   path: /deviations/:id,                 description: Get full deviation detail }
+    - { method: PATCH, path: /deviations/:id,                 description: Update draft }
+    - { method: POST,  path: /deviations/:id/submit,          description: Submit -> SUBMITTED }
+    - { method: POST,  path: /deviations/:id/withdraw,        description: Withdraw -> WITHDRAWN }
+    - { method: POST,  path: /deviations/:id/approve,         description: Approver action }
+    - { method: POST,  path: /deviations/:id/reject,          description: Reject }
+    - { method: POST,  path: /deviations/:id/request-info,    description: Request more info }
+    - { method: POST,  path: /deviations/:id/override-risk,   description: Override AI risk score }
+    - { method: POST,  path: /deviations/:id/execute,         description: Mark executed (downstream done) }
+    - { method: POST,  path: /ai/justification,               description: Invoke AI justification agent }
+    - { method: POST,  path: /ai/risk-score,                  description: Invoke AI risk scoring agent }
+    - { method: POST,  path: /ai/context-summary,             description: Invoke AI context agent }
+    - { method: POST,  path: /ai/policy,                      description: Invoke AI policy agent }
+    - { method: GET,   path: /audit/:deviation_id,            description: Full audit log for a deviation }
+    - { method: GET,   path: /reports/dashboard,              description: Aggregate dashboard metrics }
+    - { method: GET,   path: /reports/export,                 description: CSV export of deviations }
+
+# -----------------------------------------------------------------------------
+#  UI ROUTES
+# -----------------------------------------------------------------------------
+ui_routes:
+  - { path: /login,                  page: LoginPage,           public: true }
+  - { path: /,                       page: DashboardPage,       roles: ALL }
+  - { path: /deviations,             page: DeviationListPage,   roles: ALL }
+  - { path: /deviations/new,         page: DeviationFormPage,   roles: [REQUESTOR] }
+  - { path: /deviations/:id,         page: DeviationDetailPage, roles: ALL }
+  - { path: /audit,                  page: AuditPage,           roles: [AUDITOR, ADMIN, COMPLIANCE_APPROVER] }
+  - { path: /admin,                  page: AdminPage,           roles: [ADMIN] }
+
+# -----------------------------------------------------------------------------
+#  VALIDATION RULES
+# -----------------------------------------------------------------------------
+validation:
+  - rule: amount_positive
+    condition: amount > 0 when amount is set
+    error: Amount must be positive.
+  - rule: justification_length
+    condition: 50 <= len(justification) <= 4000
+    error: Justification must be between 50 and 4000 characters.
+  - rule: kyc_requires_attachment
+    condition: deviation_type == DT_KYC_DF implies attachments.count >= 1
+    error: KYC deferrals require at least one attachment.
+  - rule: segregation_of_duties
+    condition: requestor_id != approver_id
+    error: Requestor cannot approve own request.
+
+# -----------------------------------------------------------------------------
+#  SLA & NOTIFICATIONS
+# -----------------------------------------------------------------------------
+sla:
+  default_hours_per_step: 8
+  escalation_after_breach: true
+  business_hours: { start: "09:00", end: "18:00", days: [MON, TUE, WED, THU, FRI] }
+
+notifications:
+  on_events: [SUBMITTED, INFO_REQUESTED, APPROVED_L1, APPROVED_L2, FINAL_APPROVED, REJECTED, ESCALATED, EXECUTED]
+  channels: [in_app, email_stub]
+  digest: { role: APPROVERS, schedule: "daily 09:00" }
+
+# -----------------------------------------------------------------------------
+#  SECURITY
+# -----------------------------------------------------------------------------
+security:
+  authentication: { mechanism: session_cookie, secure: true, httpOnly: true }
+  rbac: { model: role_per_endpoint, default: deny }
+  pii_redaction: { fields_redacted_in_ai_prompts: [customer.name, customer.customer_code] }
+  audit_retention_years: 7

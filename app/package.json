@@ -1,0 +1,28 @@
+{
+  "name": "sda-workflow",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI-Assisted Service Deviation & Approval Workflow",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "seed": "node scripts/seed.js",
+    "init-db": "node scripts/init-db.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "bcryptjs": "^2.4.3",
+    "next": "14.2.5",
+    "openai": "^4.55.0",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "autoprefixer": "^10.4.19",
+    "postcss": "^8.4.40",
+    "tailwindcss": "^3.4.7"
+  }
+}

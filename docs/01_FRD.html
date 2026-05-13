@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Functional Requirements Document — AI-Assisted Service Deviation & Approval Workflow</title>
+<style>
+  :root {
+    --primary: #0a2540;
+    --accent: #635bff;
+    --success: #00875a;
+    --warn: #d97706;
+    --danger: #c53030;
+    --bg: #f7f8fc;
+    --card: #ffffff;
+    --border: #e3e8f0;
+    --text: #1a202c;
+    --muted: #64748b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+  .layout { display: grid; grid-template-columns: 280px 1fr; min-height: 100vh; }
+  aside {
+    background: var(--primary); color: #fff; padding: 24px 20px;
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  aside h1 { font-size: 16px; margin-bottom: 8px; }
+  aside .ver { font-size: 12px; opacity: 0.7; margin-bottom: 24px; }
+  aside nav a {
+    display: block; color: rgba(255,255,255,0.85); text-decoration: none;
+    padding: 8px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 2px;
+  }
+  aside nav a:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  aside nav a.active { background: var(--accent); color: #fff; }
+  aside nav .group { font-size: 11px; text-transform: uppercase; opacity: 0.5; margin: 16px 12px 4px; letter-spacing: 0.05em; }
+  main { padding: 40px 60px; max-width: 1100px; }
+  .doc-header { border-bottom: 2px solid var(--border); padding-bottom: 24px; margin-bottom: 32px; }
+  .doc-header h1 { font-size: 32px; color: var(--primary); margin-bottom: 8px; }
+  .doc-header p { color: var(--muted); }
+  .meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px; }
+  .meta-item { background: var(--card); padding: 12px 16px; border-radius: 8px; border: 1px solid var(--border); }
+  .meta-item .lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .meta-item .val { font-weight: 600; margin-top: 2px; }
+  section { background: var(--card); padding: 32px; border-radius: 12px; margin-bottom: 24px; border: 1px solid var(--border); }
+  section h2 { color: var(--primary); font-size: 24px; margin-bottom: 16px; border-left: 4px solid var(--accent); padding-left: 12px; }
+  section h3 { font-size: 18px; margin: 20px 0 10px; color: var(--primary); }
+  section p { margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { background: #f1f5f9; font-weight: 600; color: var(--primary); font-size: 13px; text-transform: uppercase; letter-spacing: 0.03em; }
+  tbody tr:hover { background: #fafbff; }
+  .req-id { font-family: "SF Mono", Consolas, monospace; background: #eef2ff; color: var(--accent); padding: 2px 6px; border-radius: 4px; font-size: 13px; font-weight: 600; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; }
+  .badge-must { background: #fef2f2; color: var(--danger); }
+  .badge-should { background: #fef3c7; color: var(--warn); }
+  .badge-could { background: #e0f2fe; color: #0369a1; }
+  .badge-ai { background: #ede9fe; color: var(--accent); }
+  ul { margin-left: 20px; margin-bottom: 12px; }
+  ul li { margin-bottom: 4px; }
+  .callout { padding: 16px; border-radius: 8px; margin: 12px 0; border-left: 4px solid; }
+  .callout-info { background: #eff6ff; border-color: #2563eb; }
+  .callout-warn { background: #fffbeb; border-color: var(--warn); }
+  code { font-family: "SF Mono", Consolas, monospace; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .search-box { width: 100%; padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff; margin-bottom: 16px; font-size: 13px; }
+  .search-box::placeholder { color: rgba(255,255,255,0.5); }
+  .print-btn { margin-top: 20px; padding: 8px 16px; background: var(--accent); color: #fff; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; width: 100%; }
+  @media print { aside { display: none; } .layout { grid-template-columns: 1fr; } main { padding: 20px; } section { break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside>
+    <h1>FRD — SDA Workflow</h1>
+    <div class="ver">Version 1.0 · April 2026</div>
+    <input class="search-box" type="search" id="navSearch" placeholder="Filter sections..." oninput="filterNav()">
+    <nav id="nav">
+      <div class="group">Overview</div>
+      <a href="#s1">1. Executive Summary</a>
+      <a href="#s2">2. Business Objectives</a>
+      <a href="#s3">3. Scope</a>
+      <div class="group">Actors</div>
+      <a href="#s4">4. Roles & Responsibilities</a>
+      <div class="group">Domain</div>
+      <a href="#s5">5. Deviation Types & Triggers</a>
+      <a href="#s6">6. Workflow States</a>
+      <a href="#s7">7. Approval Hierarchy</a>
+      <div class="group">AI Capabilities</div>
+      <a href="#s8">8. AI-Assisted Features</a>
+      <a href="#s9">9. HITL Controls</a>
+      <div class="group">Requirements</div>
+      <a href="#s10">10. Functional Requirements</a>
+      <a href="#s11">11. Non-Functional Requirements</a>
+      <a href="#s12">12. Validation Rules</a>
+      <div class="group">Quality</div>
+      <a href="#s13">13. Audit & Traceability</a>
+      <a href="#s14">14. Exception Handling</a>
+      <a href="#s15">15. Integrations</a>
+      <a href="#s16">16. Notifications & SLAs</a>
+      <a href="#s17">17. Security & Access</a>
+      <a href="#s18">18. Compliance</a>
+      <a href="#s19">19. Reporting & Analytics</a>
+      <div class="group">Stories</div>
+      <a href="#s20">20. User Stories</a>
+    </nav>
+    <button class="print-btn" onclick="window.print()">Print / PDF</button>
+  </aside>
+
+  <main>
+    <div class="doc-header">
+      <h1>AI-Assisted Service Deviation & Approval Workflow</h1>
+      <p>Functional Requirements Document · Telecom & Media Operational Deviations</p>
+      <div class="meta-grid">
+        <div class="meta-item"><div class="lbl">Document ID</div><div class="val">FRD-SDA-001</div></div>
+        <div class="meta-item"><div class="lbl">Version</div><div class="val">1.0</div></div>
+        <div class="meta-item"><div class="lbl">Status</div><div class="val">Approved</div></div>
+        <div class="meta-item"><div class="lbl">Owner</div><div class="val">TCS BFSI-Telecom</div></div>
+      </div>
+    </div>
+
+    <section id="s1">
+      <h2>1. Executive Summary</h2>
+      <p>This document defines the functional requirements for an <strong>AI-Assisted Service Deviation and Approval Workflow</strong> for Telecom and Media operators. The system enables Operations, Network, and Account Managers to raise exception requests (e.g., billing credits beyond limits, temporary bandwidth boosts, SLA waivers, content access exceptions, KYC deferrals) and route them through a multi-level, role-based, AI-augmented approval process while preserving auditability and regulatory compliance.</p>
+      <p>The platform uses AI to (a) generate compliance-friendly justifications, (b) score risk on each request, (c) interpret applicable policies and contract clauses, and (d) summarise customer/service context for approvers — with a human-in-the-loop override at every step.</p>
+    </section>
+
+    <section id="s2">
+      <h2>2. Business Objectives</h2>
+      <ul>
+        <li><strong>BO-1:</strong> Reduce manual effort in drafting deviation justifications by ≥ 60%.</li>
+        <li><strong>BO-2:</strong> Cut average approval cycle time from 48 hours to under 8 hours.</li>
+        <li><strong>BO-3:</strong> Achieve 100% audit readiness for telecom regulator (e.g., TRAI, OFCOM) reviews.</li>
+        <li><strong>BO-4:</strong> Prevent revenue leakage by enforcing role-based approval thresholds.</li>
+        <li><strong>BO-5:</strong> Provide measurable risk visibility through AI-generated risk scores per deviation.</li>
+      </ul>
+    </section>
+
+    <section id="s3">
+      <h2>3. Scope</h2>
+      <h3>In Scope</h3>
+      <ul>
+        <li>Initiation, routing, approval, rejection, override and audit of operational deviations.</li>
+        <li>AI agents for justification drafting, risk scoring, policy lookup, and context summarisation.</li>
+        <li>Web UI for requestors, approvers, compliance reviewers, and admins.</li>
+        <li>Integrations: customer master, billing, network inventory, contract repository, notification gateway.</li>
+      </ul>
+      <h3>Out of Scope</h3>
+      <ul>
+        <li>Customer-facing portals or self-service deviation requests by end subscribers.</li>
+        <li>Automatic execution of network changes (system raises tickets, does not execute changes directly).</li>
+        <li>Mobile native apps (responsive web only in v1).</li>
+      </ul>
+    </section>
+
+    <section id="s4">
+      <h2>4. Actors & Roles</h2>
+      <table>
+        <thead><tr><th>Role</th><th>Description</th><th>Key Permissions</th></tr></thead>
+        <tbody>
+          <tr><td>Requestor</td><td>Operations / Network / Account Manager who raises a deviation.</td><td>Create draft, submit, view own requests, withdraw before approval.</td></tr>
+          <tr><td>L1 Approver</td><td>Operations Lead — first-line review.</td><td>Approve / Reject / Request More Info, up to L1 threshold.</td></tr>
+          <tr><td>L2 Approver — Finance</td><td>Finance reviewer for revenue-impacting deviations.</td><td>Approve financial impact, set conditions.</td></tr>
+          <tr><td>L2 Approver — Network</td><td>Network architect for capacity/SLA deviations.</td><td>Approve network impact, set conditions.</td></tr>
+          <tr><td>L3 Approver — Compliance</td><td>Compliance officer for regulatory-sensitive deviations.</td><td>Final approval, regulatory sign-off, can veto.</td></tr>
+          <tr><td>AI Agent</td><td>Automated assistant generating drafts, risk scores, summaries.</td><td>Suggest (never auto-approve), log every output.</td></tr>
+          <tr><td>Auditor</td><td>Internal/external auditor.</td><td>Read-only access to all logs and decisions.</td></tr>
+          <tr><td>System Admin</td><td>Configuration & user management.</td><td>Manage policies, thresholds, roles, integrations.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s5">
+      <h2>5. Deviation Types & Triggers</h2>
+      <table>
+        <thead><tr><th>Code</th><th>Type</th><th>Trigger Example</th><th>Default Approval Path</th></tr></thead>
+        <tbody>
+          <tr><td><code>DT-BILL-CR</code></td><td>Billing Credit Beyond Limit</td><td>Customer complaint resolution requiring credit > standard cap.</td><td>L1 → Finance → Compliance (if > 5,000 USD)</td></tr>
+          <tr><td><code>DT-DATA-BW</code></td><td>Temporary Data/Bandwidth Boost</td><td>Enterprise customer event, free trial extension.</td><td>L1 → Network</td></tr>
+          <tr><td><code>DT-SLA-WV</code></td><td>SLA Waiver</td><td>Planned outage outside SLA window.</td><td>L1 → Network → Compliance</td></tr>
+          <tr><td><code>DT-CONTENT</code></td><td>Content Access Exception</td><td>Geo-locked content access for VIP/enterprise.</td><td>L1 → Compliance</td></tr>
+          <tr><td><code>DT-KYC-DF</code></td><td>KYC Deferral</td><td>Short-term onboarding before document submission.</td><td>L1 → Compliance (mandatory)</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s6">
+      <h2>6. Workflow States & Transitions</h2>
+      <p>Every deviation request moves through these states. Transitions are role-gated and fully logged.</p>
+      <table>
+        <thead><tr><th>State</th><th>Description</th><th>Allowed Next States</th></tr></thead>
+        <tbody>
+          <tr><td><code>DRAFT</code></td><td>Requestor is preparing the request.</td><td>SUBMITTED, WITHDRAWN</td></tr>
+          <tr><td><code>SUBMITTED</code></td><td>Submitted; awaiting AI scoring and L1 review.</td><td>UNDER_REVIEW, REJECTED</td></tr>
+          <tr><td><code>UNDER_REVIEW</code></td><td>An approver is actively reviewing.</td><td>APPROVED_L1, INFO_REQUESTED, REJECTED</td></tr>
+          <tr><td><code>INFO_REQUESTED</code></td><td>Approver needs more information from requestor.</td><td>UNDER_REVIEW (after info added)</td></tr>
+          <tr><td><code>APPROVED_L1 / L2 / L3</code></td><td>Cleared at corresponding approval tier.</td><td>Next tier or FINAL_APPROVED</td></tr>
+          <tr><td><code>FINAL_APPROVED</code></td><td>All required approvals received.</td><td>EXECUTED, EXPIRED</td></tr>
+          <tr><td><code>EXECUTED</code></td><td>Downstream action completed and confirmed.</td><td>(terminal)</td></tr>
+          <tr><td><code>REJECTED</code></td><td>Rejected at any tier.</td><td>(terminal)</td></tr>
+          <tr><td><code>ESCALATED</code></td><td>SLA breached; escalated to next level.</td><td>UNDER_REVIEW</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s7">
+      <h2>7. Approval Hierarchy & Escalation</h2>
+      <ul>
+        <li>Each deviation type has a default approval chain configurable by the admin.</li>
+        <li>Financial deviations above configurable threshold (e.g., 5,000 USD) MUST include Finance approval; the system blocks bypass.</li>
+        <li>If an approver does not act within the SLA (default 8 working hours), the request auto-escalates to their delegate or the next-tier role.</li>
+        <li>Compliance approval cannot be skipped for <code>DT-KYC-DF</code>, <code>DT-CONTENT</code>, and any deviation flagged High Risk by the AI agent.</li>
+      </ul>
+    </section>
+
+    <section id="s8">
+      <h2>8. AI-Assisted Capabilities <span class="badge badge-ai">AI</span></h2>
+      <table>
+        <thead><tr><th>Capability</th><th>Description</th><th>Trigger Point</th></tr></thead>
+        <tbody>
+          <tr><td>Justification Drafting</td><td>AI proposes a compliance-friendly business justification using customer + deviation context.</td><td>On DRAFT creation, on demand.</td></tr>
+          <tr><td>Risk Scoring</td><td>AI assigns Low / Medium / High score with factors (financial impact, regulatory exposure, customer tier).</td><td>On SUBMIT.</td></tr>
+          <tr><td>Policy Interpretation</td><td>AI cites internal policies / contract clauses applicable to the request.</td><td>On SUBMIT and on demand.</td></tr>
+          <tr><td>Context Summarisation</td><td>AI produces a 1-paragraph customer + service snapshot for approvers.</td><td>On approver opening the request.</td></tr>
+          <tr><td>Explainability</td><td>Every AI output includes a confidence indicator and the inputs it considered.</td><td>Always.</td></tr>
+        </tbody>
+      </table>
+      <div class="callout callout-info"><strong>Guardrail:</strong> AI outputs are advisory only. The system never auto-approves. Every AI suggestion is captured in the audit log with the prompt, model, and response.</div>
+    </section>
+
+    <section id="s9">
+      <h2>9. Human-in-the-Loop & Override</h2>
+      <ul>
+        <li>Approvers can accept the AI-drafted justification, edit it, or replace it entirely.</li>
+        <li>Approvers may override the AI risk score with a written reason (mandatory).</li>
+        <li>All overrides are visibly highlighted in the audit trail and trigger a compliance notification when downgrading severity.</li>
+      </ul>
+    </section>
+
+    <section id="s10">
+      <h2>10. Functional Requirements</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Requirement</th><th>Priority</th></tr></thead>
+        <tbody>
+          <tr><td><span class="req-id">FR-001</span></td><td>The system shall allow Requestors to create a deviation request with type, customer, service, requested action, amount/quantity, and supporting attachments.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-002</span></td><td>The system shall invoke the AI Justification agent to draft a justification using the provided context, returning the text plus the prompt and model used.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-003</span></td><td>The system shall compute and store an AI risk score (LOW / MEDIUM / HIGH) with contributing factors at submission time.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-004</span></td><td>The system shall route the request through the approval chain configured for its deviation type and financial threshold.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-005</span></td><td>The system shall block submission if any mandatory field, attachment, or compliance check is missing.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-006</span></td><td>The system shall allow approvers to Approve, Reject, or Request More Information, capturing a mandatory comment.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-007</span></td><td>The system shall enforce SLA timers per approval step and auto-escalate on breach.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-008</span></td><td>The system shall log every state transition, AI invocation, override and decision with actor, timestamp, and reason.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-009</span></td><td>The system shall provide a Compliance Officer veto on any High-Risk or KYC/Content deviation regardless of prior approvals.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-010</span></td><td>The system shall expose a dashboard summarising pending, approved, rejected, and overdue deviations by type, risk and role.</td><td><span class="badge badge-should">Should</span></td></tr>
+          <tr><td><span class="req-id">FR-011</span></td><td>The system shall allow the AI Policy agent to return relevant policy/contract snippets with citation tags on demand.</td><td><span class="badge badge-should">Should</span></td></tr>
+          <tr><td><span class="req-id">FR-012</span></td><td>The system shall send notifications (in-app + email stub) on every state transition relevant to the recipient.</td><td><span class="badge badge-should">Should</span></td></tr>
+          <tr><td><span class="req-id">FR-013</span></td><td>The system shall allow approvers to override an AI risk score with a mandatory written reason.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-014</span></td><td>The system shall produce an audit-ready export (CSV / PDF) for any date range and deviation set.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-015</span></td><td>The system shall record AI explainability metadata (prompt, model, confidence, factors) alongside every AI output.</td><td><span class="badge badge-must">Must</span></td></tr>
+          <tr><td><span class="req-id">FR-016</span></td><td>The system shall allow a Requestor to withdraw a request before it reaches FINAL_APPROVED.</td><td><span class="badge badge-could">Could</span></td></tr>
+          <tr><td><span class="req-id">FR-017</span></td><td>The system shall expire a FINAL_APPROVED request that is not executed within a configurable window (default 7 days).</td><td><span class="badge badge-should">Should</span></td></tr>
+          <tr><td><span class="req-id">FR-018</span></td><td>The system shall support role-based access control with separation of duties (requestor cannot approve own request).</td><td><span class="badge badge-must">Must</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s11">
+      <h2>11. Non-Functional Requirements</h2>
+      <table>
+        <thead><tr><th>ID</th><th>Category</th><th>Requirement</th></tr></thead>
+        <tbody>
+          <tr><td><span class="req-id">NFR-001</span></td><td>Performance</td><td>95th-percentile UI response under 1.5 s for list views; AI calls under 8 s.</td></tr>
+          <tr><td><span class="req-id">NFR-002</span></td><td>Availability</td><td>99.5% monthly, planned maintenance excluded.</td></tr>
+          <tr><td><span class="req-id">NFR-003</span></td><td>Security</td><td>OWASP Top-10 mitigations, encrypted at rest (AES-256) and in transit (TLS 1.3).</td></tr>
+          <tr><td><span class="req-id">NFR-004</span></td><td>Auditability</td><td>Append-only audit log retained for ≥ 7 years.</td></tr>
+          <tr><td><span class="req-id">NFR-005</span></td><td>Scalability</td><td>Support 10,000 requests/month, 200 concurrent approvers.</td></tr>
+          <tr><td><span class="req-id">NFR-006</span></td><td>Usability</td><td>Approver can review a request in under 2 minutes using AI summary.</td></tr>
+          <tr><td><span class="req-id">NFR-007</span></td><td>Observability</td><td>Structured logs, request traces, AI cost metrics per tenant.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s12">
+      <h2>12. Validation Rules</h2>
+      <ul>
+        <li>Amount field must be positive, ≤ a configurable global ceiling per deviation type.</li>
+        <li>Customer must exist and be active in the customer master.</li>
+        <li>Attachments are mandatory for <code>DT-KYC-DF</code> and any High-Risk request.</li>
+        <li>Requestor cannot also be an approver on the same request (segregation of duties).</li>
+        <li>Justification text length 50 – 4,000 characters.</li>
+      </ul>
+    </section>
+
+    <section id="s13">
+      <h2>13. Auditability & Traceability</h2>
+      <ul>
+        <li>Every action (create, edit, submit, AI call, approve, reject, override, execute) creates an immutable audit row.</li>
+        <li>AI outputs are stored with: model name, prompt fingerprint, temperature, response, confidence.</li>
+        <li>Each deviation has a globally unique reference (e.g., <code>SDA-2026-00001</code>) used in all downstream systems.</li>
+      </ul>
+    </section>
+
+    <section id="s14">
+      <h2>14. Exception Handling & Fallbacks</h2>
+      <ul>
+        <li>If the AI service is unavailable, the system marks AI fields as "unavailable" and continues; users can submit without AI assistance.</li>
+        <li>If the notification gateway fails, retries occur with exponential backoff up to 3 attempts; failures are surfaced in the admin dashboard.</li>
+        <li>Database transaction failures are rolled back and reported with a user-friendly error code.</li>
+      </ul>
+    </section>
+
+    <section id="s15">
+      <h2>15. Integrations</h2>
+      <table>
+        <thead><tr><th>System</th><th>Direction</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Customer Master (CRM)</td><td>Inbound (read)</td><td>Customer profile, tier, contract details.</td></tr>
+          <tr><td>Billing System</td><td>Outbound (write)</td><td>Apply billing credits once approved.</td></tr>
+          <tr><td>Network Inventory</td><td>Inbound (read)</td><td>Current bandwidth, SLA, service config.</td></tr>
+          <tr><td>Contract Repository</td><td>Inbound (read)</td><td>Source documents for AI policy interpretation.</td></tr>
+          <tr><td>Notification Gateway</td><td>Outbound</td><td>Email / SMS / in-app alerts.</td></tr>
+          <tr><td>SSO (OIDC)</td><td>Inbound</td><td>Authentication, user provisioning.</td></tr>
+          <tr><td>OpenAI API</td><td>Outbound</td><td>AI agent calls for justification, scoring, summary.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="s16">
+      <h2>16. Notifications & SLAs</h2>
+      <ul>
+        <li>Default SLA per approval step: 8 working hours; admin-configurable per deviation type.</li>
+        <li>Notifications: on submission, info-request, approval, rejection, escalation, execution.</li>
+        <li>Daily digest to all approvers with pending items.</li>
+      </ul>
+    </section>
+
+    <section id="s17">
+      <h2>17. Security & Access Controls</h2>
+      <ul>
+        <li>Authentication via SSO/OIDC; local fallback for break-glass admin only.</li>
+        <li>RBAC with least-privilege roles defined in Section 4.</li>
+        <li>Session timeout 30 minutes idle; re-authentication for high-impact actions.</li>
+        <li>Secrets (OpenAI key, DB credentials) stored in a secret manager, never in code/config.</li>
+      </ul>
+    </section>
+
+    <section id="s18">
+      <h2>18. Compliance Constraints</h2>
+      <ul>
+        <li>Telecom regulator (e.g., TRAI / OFCOM / FCC) record-keeping requirements honoured for 7+ years.</li>
+        <li>KYC deferrals must be closed within the regulator-mandated grace period (configurable, default 7 days).</li>
+        <li>PII redaction on AI prompts: customer names/IDs replaced with tokens before being sent to the LLM.</li>
+        <li>Right-to-be-forgotten requests handled via soft-delete + audit anonymisation procedure.</li>
+      </ul>
+    </section>
+
+    <section id="s19">
+      <h2>19. Reporting & Analytics</h2>
+      <ul>
+        <li>Operational dashboard: pending / approved / rejected by deviation type and risk band.</li>
+        <li>SLA adherence report: % of approvals within SLA per role.</li>
+        <li>AI utilisation: % of requests using AI drafts, average confidence, override rate.</li>
+        <li>Financial impact: total credits issued, by reason, by period.</li>
+      </ul>
+    </section>
+
+    <section id="s20">
+      <h2>20. User Stories</h2>
+      <table>
+        <thead><tr><th>Story ID</th><th>As a…</th><th>I want…</th><th>So that…</th></tr></thead>
+        <tbody>
+          <tr><td><span class="req-id">US-01</span></td><td>Account Manager</td><td>to raise a billing-credit deviation with attached customer complaint</td><td>I can resolve customer issues within SLA.</td></tr>
+          <tr><td><span class="req-id">US-02</span></td><td>Account Manager</td><td>the system to draft a justification automatically</td><td>I save time and maintain consistency.</td></tr>
+          <tr><td><span class="req-id">US-03</span></td><td>L1 Approver</td><td>a one-paragraph AI summary of customer and service context</td><td>I can decide quickly.</td></tr>
+          <tr><td><span class="req-id">US-04</span></td><td>Finance Approver</td><td>the financial impact and risk score visible upfront</td><td>I can prioritise high-value requests.</td></tr>
+          <tr><td><span class="req-id">US-05</span></td><td>Network Approver</td><td>current bandwidth/SLA data attached to the request</td><td>I can evaluate impact without leaving the screen.</td></tr>
+          <tr><td><span class="req-id">US-06</span></td><td>Compliance Officer</td><td>to veto any high-risk or KYC-related deviation</td><td>regulatory exposure stays under control.</td></tr>
+          <tr><td><span class="req-id">US-07</span></td><td>Compliance Officer</td><td>AI-suggested policy citations</td><td>I can verify against actual contract clauses.</td></tr>
+          <tr><td><span class="req-id">US-08</span></td><td>Approver</td><td>to override the AI risk score with a justification</td><td>my domain expertise prevails when needed.</td></tr>
+          <tr><td><span class="req-id">US-09</span></td><td>Auditor</td><td>full immutable trail per request, including AI prompts</td><td>I can verify decisions during reviews.</td></tr>
+          <tr><td><span class="req-id">US-10</span></td><td>Admin</td><td>to configure thresholds, approval chains, and SLAs</td><td>the workflow adapts to business changes.</td></tr>
+          <tr><td><span class="req-id">US-11</span></td><td>Requestor</td><td>notifications on every state change</td><td>I stay informed without checking the portal.</td></tr>
+          <tr><td><span class="req-id">US-12</span></td><td>Manager</td><td>a dashboard of pending and overdue items</td><td>I can act on bottlenecks proactively.</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <p style="text-align:center; color: var(--muted); padding: 20px;">— End of Functional Requirements Document —</p>
+  </main>
+</div>
+
+<script>
+  // active nav highlighting on scroll
+  const navLinks = document.querySelectorAll('aside nav a');
+  const sections = document.querySelectorAll('section');
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(s => { if (window.scrollY >= s.offsetTop - 100) current = s.id; });
+    navLinks.forEach(a => { a.classList.toggle('active', a.getAttribute('href') === '#' + current); });
+  });
+  // nav filter
+  function filterNav() {
+    const q = document.getElementById('navSearch').value.toLowerCase();
+    navLinks.forEach(a => { a.style.display = a.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  }
+</script>
+</body>
+</html>
