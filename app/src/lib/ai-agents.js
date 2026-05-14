@@ -8,6 +8,7 @@ let _client = null;
 function client() {
   if (!_client) {
     const key = process.env.OPENAI_API_KEY;
+    console.log("key", key)
     if (!key || key === 'sk-your-openai-key-here') return null;
     _client = new OpenAI({ apiKey: key });
   }

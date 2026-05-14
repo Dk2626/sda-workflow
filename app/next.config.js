@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { serverComponentsExternalPackages: ['better-sqlite3'] },
+  experimental: { serverComponentsExternalPackages: ['node-sqlite3-wasm'] },
   reactStrictMode: true,
 };
 module.exports = nextConfig;
